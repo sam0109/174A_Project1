@@ -9,11 +9,12 @@
 attribute vec4 vPosition;
 uniform mat4 mPerspective;
 uniform mat4 mTransformation;
+uniform mat4 mCameraMovement;
 
 void
 main()
 {
-    gl_Position = mPerspective * mTransformation * vPosition;
+    gl_Position = mPerspective * mCameraMovement * mTransformation * vPosition;
 }
 </script>
 

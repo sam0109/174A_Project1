@@ -45,30 +45,30 @@ var points =
 	vec3 (0, 1, 1),
 	vec3 (1, 1, 1),
 					//line coordinates
-	vec3 (-0.01, -0.01, -0.01),
-	vec3 (-0.01, -0.01, 1.01),
-	vec3 (-0.01, -0.01, -0.01),
-	vec3 (-0.01, 1.01, -0.01),
-	vec3 (-0.01, -0.01, -0.01),
-	vec3 (1.01, -0.01, -0.01),
-	vec3 (1.01, 1.01, -0.01),
-	vec3 (1.01, 1.01, 1.01),
-	vec3 (1.01, 1.01, -0.01),
-	vec3 (-0.01, 1.01, -0.01),
-	vec3 (1.01, 1.01, -0.01),
-	vec3 (-0.01, 1.01, -0.01),
-	vec3 (-0.01, 1.01, 1.01),
-	vec3 (1.01, 1.01, 1.01),
-	vec3 (-0.01, 1.01, 1.01),
-	vec3 (-0.01, -0.01, 1.01),
-	vec3 (-0.01, 1.01, 1.01),
-	vec3 (-0.01, 1.01, -0.01),
-	vec3 (1.01, -0.01, 1.01),
-	vec3 (-0.01, -0.01, 1.01),
-	vec3 (1.01, -0.01, 1.01),
-	vec3 (1.01, 1.01, 1.01),
-	vec3 (1.01, -0.01, 1.01),
-	vec3 (1.01, -0.01, -0.01)
+	vec3 (-0.001, -0.001, -0.001),
+	vec3 (-0.001, -0.001, 1.001),
+	vec3 (-0.001, -0.001, -0.001),
+	vec3 (-0.001, 1.001, -0.001),
+	vec3 (-0.001, -0.001, -0.001),
+	vec3 (1.001, -0.001, -0.001),
+	vec3 (1.001, 1.001, -0.001),
+	vec3 (1.001, 1.001, 1.001),
+	vec3 (1.001, 1.001, -0.001),
+	vec3 (-0.001, 1.001, -0.001),
+	vec3 (1.001, 1.001, -0.001),
+	vec3 (1.001, -0.001, -0.001),
+	vec3 (-0.001, 1.001, 1.001),
+	vec3 (1.001, 1.001, 1.001),
+	vec3 (-0.001, 1.001, 1.001),
+	vec3 (-0.001, -0.001, 1.001),
+	vec3 (-0.001, 1.001, 1.001),
+	vec3 (-0.001, 1.001, -0.001),
+	vec3 (1.001, -0.001, 1.001),
+	vec3 (-0.001, -0.001, 1.001),
+	vec3 (1.001, -0.001, 1.001),
+	vec3 (1.001, 1.001, 1.001),
+	vec3 (1.001, -0.001, 1.001),
+	vec3 (1.001, -0.001, -0.001)
 ]
 
 	
@@ -82,6 +82,8 @@ var mPerspective;
 var mColor;
 var mTransformation;
 var cubeBuffer;
+var mCameraMovement;
+var cameraPos;
 var j = 0;
 	
 window.onload = function init()
@@ -91,13 +93,6 @@ window.onload = function init()
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
 
-    //
-    //  Initialize our data for the scene
-    //
-
-	// Initialize the transformation matrices
-
-    // First, initialize the cube strip
 	
     //
     //  Configure WebGL
@@ -129,15 +124,55 @@ window.onload = function init()
 	
 	mTransformation = gl.getUniformLocation( program, "mTransformation" );
 	mColor = gl.getUniformLocation( program, "mColor" );
+	mCameraMovement = gl.getUniformLocation( program, "mCameraMovement" );
 	
-	window.onkeydown = function (event) {
-		var key = String.fromCharCode(event.keyCode);
-		switch(key) {
-			case 'C':
-			j = (j + 1) % 8;
+	var xPos = 0;
+	var yPos = 0;
+	var zPos = 0;
+	var azim = 0.0;
+	cameraPos = 
+	[
+		vec4(1,0,0,0),
+		vec4(0,1,0,0),
+		vec4(0,0,1,0),
+		vec4(0,0,0,1)
+	]
+	window.addEventListener("keydown", function () {
+		switch(event.keyCode) {
+			case 67: //"c"
+				j = (j + 1) % 8;
+			break;
+			case 37: //"left"
+				azim += -1;
+			break;
+			case 38: //"up"
+				yPos += 0.25;
+			break;
+			case 39: //"right"
+				azim += 1;
+			break;
+			case 40: //"down"
+				yPos += -0.25;
+			break;
+			case 73: //"i"
+				xPos += -0.25 * Math.sin((Math.PI / 180) * -azim);
+				zPos += -0.25 * Math.cos((Math.PI / 180) * -azim);
+			break;
+			case 74: //"j"
+				xPos += -0.25 * Math.cos((Math.PI / 180) * azim);
+				zPos += -0.25 * Math.sin((Math.PI / 180) * azim);
+			break;
+			case 75: //"k"
+				xPos += 0.25 * Math.cos((Math.PI / 180) * azim);
+				zPos += 0.25 * Math.sin((Math.PI / 180) * azim);
+			break;
+			case 77: //"m"
+				xPos += 0.25 * Math.sin((Math.PI / 180) * -azim);
+				zPos += 0.25 * Math.cos((Math.PI / 180) * -azim);
 			break;
 		}
-	};
+		cameraPos = mult(rotate(azim, [0,1,0]), translate(-xPos, -yPos, -zPos));
+	});
 	// render it:
 	render();
 }
@@ -145,6 +180,7 @@ window.onload = function init()
 function render()
 {
 	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	gl.uniformMatrix4fv(mCameraMovement, false, new flatten(cameraPos));
 	for(var i = 0; i < 8; i++, j = (j + 1) % 8)
 	{
 		gl.uniformMatrix4fv(mTransformation, false, new flatten(cubeMatrix[i]));
