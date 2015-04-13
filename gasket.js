@@ -2,6 +2,14 @@
 var gl;
 var points;
 
+var crosshairMatrix = 
+[
+	vec4(1,0,0,0),
+	vec4(0,1,0,0),
+	vec4(0,0,1,0),
+	vec4(0,0,0,1)
+]
+
 var cubeMatrix = 
 [
 	translate(10, 10, -20),
@@ -16,7 +24,7 @@ var cubeMatrix =
 
 var colors = 
 [
-	vec4(0.5, 0.5, 0.5, 1.0),
+	vec4(0.5, 0.75, 1.0, 1.0),
 	vec4(1.0, 0.0, 0.0, 1.0),
 	vec4(0.0, 1.0, 0.0, 1.0),
 	vec4(1.0, 1.0, 0.0, 1.0),
@@ -68,7 +76,11 @@ var points =
 	vec3 (1.001, -0.001, 1.001),
 	vec3 (1.001, 1.001, 1.001),
 	vec3 (1.001, -0.001, 1.001),
-	vec3 (1.001, -0.001, -0.001)
+	vec3 (1.001, -0.001, -0.001),
+	vec3 (.1, 0, -.15),
+	vec3 (-.1, 0, -.15),
+	vec3 (0, .1, -.15),
+	vec3 (0, -.1, -.15)
 ]
 
 	
@@ -79,11 +91,14 @@ var white = new Float32Array(4);
 	white[3] = 1.0;
 
 var mPerspective;
+var projection;
 var mColor;
 var mTransformation;
 var cubeBuffer;
 var mCameraMovement;
 var cameraPos;
+var crosshair = false;
+var hFOV = 60;
 var j = 0;
 	
 window.onload = function init()
@@ -92,7 +107,6 @@ window.onload = function init()
     
     gl = WebGLUtils.setupWebGL( canvas );
     if ( !gl ) { alert( "WebGL isn't available" ); }
-
 	
     //
     //  Configure WebGL
@@ -118,7 +132,7 @@ window.onload = function init()
     gl.vertexAttribPointer( vPosition, 3, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vPosition );
 	
-	var projection =  perspective(60, canvas.width/canvas.height, 0.1, 100);
+	projection =  perspective(hFOV, canvas.width/canvas.height, 0.1, 100);
 	mPerspective = gl.getUniformLocation(program, "mPerspective");
 	gl.uniformMatrix4fv(mPerspective, false, new flatten(projection));
 	
@@ -170,8 +184,25 @@ window.onload = function init()
 				xPos += 0.25 * Math.sin((Math.PI / 180) * -azim);
 				zPos += 0.25 * Math.cos((Math.PI / 180) * -azim);
 			break;
+			case 82: //"r"
+				xPos = 0;
+				yPos = 0;
+				zPos = 0;
+				azim = 0.0;
+			break;
+			case 78: //"n"
+				hFOV--;
+			break;
+			case 87: //"w"
+				hFOV++;
+			break;
+			case 187: //"+"
+				crosshair = !crosshair;
+			break;
 		}
 		cameraPos = mult(rotate(azim, [0,1,0]), translate(-xPos, -yPos, -zPos));
+		projection =  perspective(hFOV, canvas.width/canvas.height, 0.1, 100);
+		gl.uniformMatrix4fv(mPerspective, false, new flatten(projection));
 	});
 	// render it:
 	render();
@@ -192,6 +223,14 @@ function render()
 	{
 		gl.uniformMatrix4fv(mTransformation, false, new flatten(cubeMatrix[i]));
 		gl.drawArrays( gl.LINES, 16, 24);
+	}
+	if(crosshair)
+	{
+		gl.uniformMatrix4fv(mTransformation, false, new flatten(crosshairMatrix));
+		gl.uniformMatrix4fv(mPerspective, false, new flatten(crosshairMatrix));
+		gl.uniformMatrix4fv(mCameraMovement, false, new flatten(crosshairMatrix));
+		gl.drawArrays( gl.LINES, 40, 4);
+		gl.uniformMatrix4fv(mPerspective, false, new flatten(projection));
 	}
 	requestAnimFrame(render);
 }
